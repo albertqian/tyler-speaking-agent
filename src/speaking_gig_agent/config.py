@@ -32,7 +32,7 @@ class Settings:
     anthropic_api_key: str
     anthropic_model: str
     search_provider: str
-    serpapi_api_key: str
+    serper_api_key: str
     gmail_user: str
     gmail_app_password: str
     to_email: str
@@ -71,8 +71,8 @@ def load_settings() -> Settings:
     return Settings(
         anthropic_api_key=os.getenv("ANTHROPIC_API_KEY", "").strip(),
         anthropic_model=os.getenv("ANTHROPIC_MODEL", "claude-3-5-sonnet-latest").strip(),
-        search_provider=os.getenv("SEARCH_PROVIDER", "serpapi").strip().lower(),
-        serpapi_api_key=os.getenv("SERPAPI_API_KEY", "").strip(),
+        search_provider=os.getenv("SEARCH_PROVIDER", "serper").strip().lower(),
+        serper_api_key=os.getenv("SERPER_API_KEY", "").strip(),
         gmail_user=os.getenv("GMAIL_USER", "").strip(),
         gmail_app_password=os.getenv("GMAIL_APP_PASSWORD", "").strip(),
         to_email=os.getenv("TO_EMAIL", "").strip(),
@@ -89,8 +89,14 @@ def validate_settings(settings: Settings) -> None:
     if not settings.anthropic_api_key:
         missing.append("ANTHROPIC_API_KEY")
 
-    if settings.search_provider == "serpapi" and not settings.serpapi_api_key:
-        missing.append("SERPAPI_API_KEY")
+    if settings.search_provider == "serper" and not settings.serper_api_key:
+        missing.append("SERPER_API_KEY")
+
+    if settings.search_provider != "serper":
+    raise RuntimeError(
+        f"Unsupported SEARCH_PROVIDER={settings.search_provider!r}. "
+        "This repo version is configured for SEARCH_PROVIDER=serper."
+    )
 
     if not settings.dry_run:
         if not settings.gmail_user:
