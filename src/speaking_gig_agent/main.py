@@ -30,7 +30,7 @@ def run() -> None:
     search_results = search_all(
         queries=settings.queries,
         provider=settings.search_provider,
-        serpapi_api_key=settings.serper_api_key,
+        serper_api_key=settings.serper_api_key,
         max_results_per_query=settings.max_results_per_query,
     )
 
