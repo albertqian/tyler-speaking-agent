@@ -92,11 +92,11 @@ def validate_settings(settings: Settings) -> None:
     if settings.search_provider == "serper" and not settings.serper_api_key:
         missing.append("SERPER_API_KEY")
 
-    if settings.search_provider != "serper":
-    raise RuntimeError(
-        f"Unsupported SEARCH_PROVIDER={settings.search_provider!r}. "
-        "This repo version is configured for SEARCH_PROVIDER=serper."
-    )
+        if settings.search_provider != "serper":
+        raise RuntimeError(
+            f"Unsupported SEARCH_PROVIDER={settings.search_provider!r}. "
+            "This repo version is configured for SEARCH_PROVIDER=serper."
+        )
 
     if not settings.dry_run:
         if not settings.gmail_user:
