@@ -86,13 +86,14 @@ def load_settings() -> Settings:
 
 def validate_settings(settings: Settings) -> None:
     missing = []
+
     if not settings.anthropic_api_key:
         missing.append("ANTHROPIC_API_KEY")
 
     if settings.search_provider == "serper" and not settings.serper_api_key:
         missing.append("SERPER_API_KEY")
 
-        if settings.search_provider != "serper":
+    if settings.search_provider != "serper":
         raise RuntimeError(
             f"Unsupported SEARCH_PROVIDER={settings.search_provider!r}. "
             "This repo version is configured for SEARCH_PROVIDER=serper."
