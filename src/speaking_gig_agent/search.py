@@ -56,13 +56,15 @@ def search_all(
     max_results_per_query: int,
 ) -> list[SearchResult]:
     all_results: list[SearchResult] = []
+    query_count = 0
 
     for query in queries:
+        query_count += 1
         logger.info("Searching query: %s", query)
         if provider == "serper":
             try:
                 all_results.extend(
-                    serpapi_search(
+                    serper_search(
                         query=query,
                         api_key=serper_api_key,
                         max_results=max_results_per_query,
@@ -73,7 +75,16 @@ def search_all(
         else:
             raise ValueError(f"Unsupported SEARCH_PROVIDER: {provider}")
 
-    return dedupe_results(all_results)
+    deduped = dedupe_results(all_results)
+    if not deduped:
+        logger.error(
+            "Search returned zero results across %d queries. "
+            "This usually means the search provider is misconfigured, "
+            "the API key is invalid, or every query is failing. "
+            "Check logs above for per-query errors.",
+            query_count,
+        )
+    return deduped
 
 
 def dedupe_results(results: list[SearchResult]) -> list[SearchResult]:

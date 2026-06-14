@@ -3,7 +3,17 @@ from __future__ import annotations
 import re
 from urllib.parse import urlparse
 
+from .config import TARGET_REGIONS, REGIONAL_UMBRELLAS
 from .models import Opportunity
+
+
+# Build geographic positive terms from the configured target regions.
+# Lowercased once at import time so scoring stays O(n) per opportunity.
+_GEO_TERMS: list[str] = []
+for _state, _cities in TARGET_REGIONS.items():
+    _GEO_TERMS.append(_state.lower())
+    _GEO_TERMS.extend(c.lower() for c in _cities)
+_GEO_TERMS.extend(u.lower() for u in REGIONAL_UMBRELLAS)
 
 
 POSITIVE_TERMS = [
@@ -22,14 +32,9 @@ POSITIVE_TERMS = [
     "mentorship",
     "professional development",
     "community",
-    "california",
-    "central coast",
-    "san luis obispo",
-    "slo",
-    "bay area",
-    "los angeles",
     "virtual",
     "hybrid",
+    *_GEO_TERMS,
 ]
 
 NEGATIVE_TERMS = [

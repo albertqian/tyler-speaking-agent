@@ -9,22 +9,70 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-DEFAULT_QUERIES: list[str] = [
-    '"call for speakers" "women entrepreneurs" "paid speaker"',
-    '"speaker application" "women in business" honorarium',
-    '"keynote speaker" "women leadership" paid',
-    '"conference speaker proposal" "female founders" honorarium',
-    '"workshop facilitator" "women entrepreneurs" paid',
-    '"women leadership conference" "call for speakers" California',
-    '"small business conference" "speaker proposal" paid',
-    '"San Luis Obispo" speaker "women entrepreneurs"',
-    '"Central Coast" "call for speakers"',
-    '"California" "women in business" "speaker application"',
-    '"Bay Area" "female founders" "speaker application"',
-    '"Los Angeles" "women leadership" "call for speakers"',
-    '"virtual summit" "women entrepreneurs" "call for speakers"',
-    '"retreat facilitator" "women leaders" paid',
+# Target regions for geographic search bias and scoring.
+# Add or remove states here and both queries and scoring will follow.
+# Each entry maps a state to its key metros/sub-regions Tyler cares about.
+TARGET_REGIONS: dict[str, list[str]] = {
+    "California": ["San Luis Obispo", "Central Coast", "SLO", "Bay Area", "Los Angeles", "San Diego"],
+    "Nevada": ["Las Vegas", "Reno"],
+    "Arizona": ["Phoenix", "Scottsdale", "Tucson"],
+    "Oregon": ["Portland"],
+    "Washington": ["Seattle", "Bellevue"],
+    "Hawaii": ["Honolulu", "Maui"],
+}
+
+# Umbrella regional phrases worth searching once at the multi-state level.
+REGIONAL_UMBRELLAS: list[str] = ["West Coast", "Pacific Northwest", "Western US"]
+
+
+# Non-geographic queries — these run regardless of region.
+# Strategy: keep recall high by using at most 2 quoted phrases per query
+# and NOT requiring the word "paid" in the query string. Page authors
+# rarely write "paid speaker" verbatim — they write "honorarium",
+# "speaker fee", "$X stipend", or just nothing (you negotiate later).
+# Requiring "paid" in the query filters out the very listings we want.
+# Claude's extraction step determines pay status from the page content.
+_BASE_QUERIES: list[str] = [
+    '"call for speakers" "women entrepreneurs"',
+    '"speaker application" "women in business"',
+    '"keynote speaker" "women leadership"',
+    '"conference speaker proposal" "female founders"',
+    '"workshop facilitator" "women entrepreneurs"',
+    '"speaker proposal" "small business" honorarium',
+    '"virtual summit" "women entrepreneurs"',
+    '"retreat facilitator" "women leaders"',
 ]
+
+
+def _build_default_queries() -> list[str]:
+    """Generate the default query list from TARGET_REGIONS + base queries.
+
+    Strategy: keep query count bounded. One query per state (state-level),
+    one query per top metro (city-level), plus umbrella regional queries.
+    Heavier query counts blow up the per-week Claude extraction cost.
+    """
+    queries = list(_BASE_QUERIES)
+
+    # One state-level query per state. Two quoted phrases max.
+    for state in TARGET_REGIONS:
+        queries.append(f'"{state}" "women" speaker application')
+
+    # One city-level query per top metro (first city in each state's list).
+    # Two quoted phrases max.
+    for state, cities in TARGET_REGIONS.items():
+        if not cities:
+            continue
+        top_metro = cities[0]
+        queries.append(f'"{top_metro}" "call for speakers" women')
+
+    # Umbrella queries. Two quoted phrases max.
+    for umbrella in REGIONAL_UMBRELLAS:
+        queries.append(f'"{umbrella}" "women entrepreneurs" speaker')
+
+    return queries
+
+
+DEFAULT_QUERIES: list[str] = _build_default_queries()
 
 
 @dataclass(frozen=True)

@@ -7,13 +7,29 @@ from typing import Any
 
 from anthropic import Anthropic
 
+from .config import TARGET_REGIONS, REGIONAL_UMBRELLAS
 from .fetch import build_candidate_context
 from .models import Opportunity, SearchResult
 
 logger = logging.getLogger(__name__)
 
 
-SYSTEM_PROMPT = """You extract paid speaking opportunities from web search results.
+def _format_regions_for_prompt() -> str:
+    """Render TARGET_REGIONS into a human-readable line for the system prompt."""
+    parts = []
+    for state, cities in TARGET_REGIONS.items():
+        if cities:
+            parts.append(f"{state} ({', '.join(cities)})")
+        else:
+            parts.append(state)
+    umbrellas = ", ".join(REGIONAL_UMBRELLAS)
+    return f"{'; '.join(parts)}; broader regions: {umbrellas}; or virtual/hybrid"
+
+
+_REGIONS_LINE = _format_regions_for_prompt()
+
+
+SYSTEM_PROMPT = f"""You extract paid speaking opportunities from web search results.
 
 You are helping identify opportunities relevant to Tyler Skinner, Founder of Women Making Waves in San Luis Obispo County.
 
@@ -25,7 +41,7 @@ Prioritize:
 - Panels with honorariums
 - Women leadership, women entrepreneurs, female founders
 - Community building, mentorship, professional development
-- California, Central Coast, Bay Area, Los Angeles, or virtual opportunities
+- Opportunities located in: {_REGIONS_LINE}
 
 Reject or mark low confidence:
 - Unpaid exposure-only opportunities
